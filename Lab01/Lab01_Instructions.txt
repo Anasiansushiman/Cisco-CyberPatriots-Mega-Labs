@@ -1,0 +1,128 @@
+Make sure to turn on all devices first
+
+COMMON CONFIGURATION (Switches):
+- secret password is "M0r3Po1nt5!"
+- console lines and vty lines password is "k33pLe8rn1ng"
+- require passwords to be entered for console/vty lines with "login"
+- disable ip domain-lookup (EXCEPT FOR MLS)
+- encrypt passwords
+- all trunk ports should allow VLANs 3, 10, 20, 30, and 40
+
+COMMON CONFIGURATION (End Devices):
+- DNS Server: 8.8.8.8
+
+VLAN NAMING (All Switches):
+3 - Servers
+10 - Office1
+20 - Office2
+30 - Office3
+40 - Reception
+
+______________________________________________________________________________
+Connections:
+Office 1 Switch 1 Fa0/1 --> Data Server 1 
+Office 1 Switch 1 Fa0/2 --> Data Server 2
+Office 1 Switch 1 G0/1 ---> MLS G1/0/1
+
+Office 1 Switch 2 Fa0/1 --> Admin PC
+Office 1 Switch 2 G0/1 ---> MLS G1/0/2
+
+Office 2 Switch Fa0/1 ----> Office PC 1
+Office 2 Switch Fa0/2 ----> Office PC 2
+Office 2 Switch G0/1 -----> MLS G1/0/3
+
+Office 3 Switch Fa0/1 ----> Office PC 3
+Office 3 Switch Fa0/2 ----> Printer
+Office 3 Switch G0/1 -----> MLS G1/0/4
+
+Reception Switch Fa0/1 ---> Reception PC 1
+Reception Switch Fa0/2 ---> Reception PC 2
+Reception Switch G0/1 ----> MLS G1/0/5
+
+______________________________________________________________________________
+MLS:
+- Hostname: MLS
+- Interfaces connected to the other switches should be a trunk port
+- G0/24 IP Addressing + Subnet: Use the first host address in the "Internet" 
+	network (100.52.10.252/30)
+- Default Route next hop IP: 100.52.10.254
+- VLAN IP addresses: First usable IP address in their respective network
+
+Office 1 Switch 1:
+- Hostname: Office1_Switch1
+- Interfaces connected to servers should be in VLAN 3
+- Interface connected to MLS should be a trunk port
+- Default Gateway: 192.168.1.1
+
+Office 1 Switch 2:
+- Hostname: Office1_Switch2
+- Interfaces connected to Admin PC should be in VLAN 10
+- Interface connected to MLS should be a trunk port
+- Default Gateway: 192.168.1.129
+
+Office 2 Switch:
+- Hostname: Office2_Switch
+- Interfaces connected to Office PC 1 and Office PC 2 should be in VLAN 20
+- Interface connected to MLS should be a trunk port
+- Default Gateway: 192.168.2.1
+
+Office 3 Switch: 
+- Hostname: Office3_Switch
+- Interfaces connected to Office PC 3 and Printer should be in VLAN 30
+- Interface Fa0/2 should have port security enabled on the restrict mode with
+  only 1 MAC address allowed
+- This MAC address should be explicitly set as the printer's MAC address
+- Interface connected to MLS should be a trunk port
+- Default Gateway: 192.168.3.1
+
+Reception Switch
+- Hostname: Reception_Switch
+- Interfaces connected to Reception PC 1 and Reception PC 2 should be in VLAN 40
+- Interface connected to MLS should be a trunk port
+- Default Gateway: The first usable host address in 172.16.10.0/29
+
+______________________________________________________________________________
+Data Server 1:
+- IP Address: 192.168.1.51
+- Subnet: Determine with knowledge of the network
+- Default Gateway: 192.168.1.1
+
+Data Server 2:
+- IP Address: 192.168.1.52
+- Subnet: Determine with knowledge of the network
+- Default Gateway: 192.168.1.1
+
+Admin PC:
+- IP Address: 192.168.1.191
+- Subnet: 255.255.255.128
+- Default Gateway: Determine with knowledge of the network
+
+Office PC 1:
+- IP Address: 192.168.2.4
+- Subnet: 255.255.255.0
+- Default Gateway: 192.168.2.1
+
+Office PC 2: 
+- IP Address: The 5th usable host address in the "Office 2" network (192.168.2.0/24)
+- Subnet: 255.255.255.0
+- Default Gateway: 192.168.2.1
+
+Office PC 3:
+- IP Address: 192.168.3.2
+- Subnet: Determine with knowledge of the network
+- Default Gateway: 192.168.3.1
+
+Printer:
+- IP Address: Last usable host address in the "Office 3" network (192.168.3.0/24)
+- Subnet: 255.255.255.0
+- Default Gateway: Determine with knowledge of the network 
+
+Reception PC 1:
+- IP Address: 172.16.10.5
+- Subnet: Determine with knowledge of the network
+- Default Gateway: 172.16.10.1
+
+Reception PC 2:
+- IP Address: The 6th usable host address in the "Reception" network (172.16.10.0/29)
+- Subnet: Determine with knowledge of the network
+- Default Gateway: 172.16.10.1
