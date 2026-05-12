@@ -1,0 +1,336 @@
+Ensure all devices are turned on before starting
+______________________________________________________________________________
+
+Task:
+Your job is to configure the internal network of an office building, the
+routers connecting to the edge router, a network in a different location
+where the boss works, and the network the boss's roommates use.
+(I realize this is a very unrealistic scenario but please bear with me)
+______________________________________________________________________________
+
+Part 1: Connect All of the Devices in the Internal Network
+
+Access Switch 1:
+- connect port Fa0/1 with PC 1 
+- connect port Fa0/2 with PC 2
+- connect port G0/1 with R1's G0/1
+
+Access Switch 2:
+- connect port Fa0/3 with Lonely User 1 
+- connect port Fa0/1 with Lonely User 2
+- connect port G0/1 with R2's G0/1
+
+Connecting Switch:
+- connect port Fa0/1 with Server 1
+- connect port Fa0/3 with Server 2
+- connect port Fa0/2 with Access Switch 2's Fa0/2
+
+Access Switch 3:
+- connect port Fa0/1 with Money Manager
+- connect port G0/1 with R3's G0/1
+
+Access Switch 4:
+- connect port Fa0/1 with Worker 1 
+- connect port Fa0/2 with Worker 2
+- connect port G0/1 with R3's G0/2
+
+Routers:
+- The G0/2 interface of R1 and R2 connect to each other
+- The G0/0 of R1-3 will connect to the MLS's G1/0/router#
+- MLS's G1/0/24 connects to Edge Router's G0/0
+______________________________________________________________________________
+
+Part 2: Assign IP Addressing for End Hosts in the Internal Network
+Note: Gateways will be assigned later
+
+PC 1: 10.0.0.10/24
+PC 2: 10.0.0.20/24
+
+Lonely User 1: 10.0.2.10/24
+Lonely User 2: 10.0.2.20/24
+
+Servers: Use 10.0.3.x00/24 where x is the number of the server
+
+Money Manager: Use the second available host address in 10.0.12.0/26
+
+Workers: Use 10.0.12.10x/26 where x is the number of the worker
+______________________________________________________________________________
+
+Part 3: Assign IP Addressing and Hostnames for Routers in the Internal Network
+
+R1:
+- Hostname: R1
+- G0/0: 172.20.20.254/30
+- G0/1: 10.0.0.1/24 (Default gateway for this network)
+- G0/2: 172.31.31.249/30
+
+R2:
+- Hostname: R2
+- G0/0: 172.24.24.254/30
+- G0/1: Routing On A Stick; G0/1.x will have the IP address 10.0.x.1/24 and x
+is the VLAN number (There's two. The IP addresses are also default gateways)
+- G0/2: 172.31.31.250/30
+
+R3:
+- Hostname: R3
+- G0/0: 172.27.27.242/30
+- G0/1: First usable host address in 10.0.12.0/26 (Default gateway)
+- G0/2: First usable host address in 10.0.12.64/26 (Default gateway)
+
+MLS:
+- Hostname: MLS
+- G1/0/1: 172.20.20.253/30
+- G1/0/2: 172.24.24.253/30
+- G1/0/3: 172.27.27.241/30
+- G1/0/24: 192.168.33.2/30
+
+Edge Router:
+- Hostname: Edge_Router
+- G0/0: 192.168.33.1/30
+______________________________________________________________________________
+
+Part 4: Assign Default Gateways for End Hosts in the Internal Network
+
+Go back to all of the PCs and servers to assign their default gateway if you
+already haven't (gateway addresses have been specified in part 3).
+______________________________________________________________________________
+
+Part 5: Configure All Switches in the Internal Network (Not Really Secure)
+
+Access Switch 1:
+- Hostname: Access_SW1
+- Secret: d0ntSu3m3!
+- SSH will be enabled for remote access
+	- Version 2
+	- Domain Name: Donkey.com
+	- Username: employee
+	- Secret: weneedM0ney! (USE MD5 / Level 5 / ENCRYPTED secret)
+	- Key Length: I forgot what I put haha... Ideally put 2048 bits or more
+	- Default Gateway: 10.0.0.1
+	- VLAN 1 IP: 10.0.0.2/24
+- Access List (For SSH Connections):
+	- ACL #3
+	- Permit all hosts in the 10.0.0.0/16 network
+- Line vty 0-4 (Nothing for 5-15):
+	- Use ACL 3 for any incoming connection
+	- Exec-timeout 5 minutes 0 seconds
+	- Need to login with username + password
+	- Only allow SSH connections
+
+Access Switch 2:
+- Hostname: Access_SW2
+- Fa0/1 + Fa0/3: Access port for VLAN 2
+- Fa0/2 + G0/1: Trunk port for VLANs 2 + 3
+
+Connecting Switch:
+- Hostname: Connecting_SW
+- Fa0/1 + Fa0/3: Access port for VLAN 3
+- Fa0/2: Trunk port for VLANs 2 + 3
+
+Access Switch 3:
+- Hostname: Access_SW3
+- Secret: d0ntSu3m3!
+- Service: passwords should be encrypted
+- MOTD: "GET OUT IF YOU HAVE NO BUSINESS HERE"
+- Console + vty 0-4: password "netacadR0cks!" + require password to login
+- Descriptions
+	- Fa0/1: "Connection for Money Manager"
+	- G0/1: "Connection to R3"
+- Set the default gateway in case we want SSH on this switch in the future
+
+Access Switch 4:
+- Hostname: Access_SW4
+- Nothing else
+______________________________________________________________________________
+
+Part 6: Configure OSPF in the Internal Network
+
+Common Configuration:
+- OSPF process 1
+- All network statements will be for area 0
+- Any interface that is not participating in OSPF should be marked as passive
+
+R1:
+- Router ID: 10.10.10.1
+- Networks
+	- 10.0.0.0/24
+	- 172.31.31.248/30
+	- 172.20.20.252/30
+- G0/2
+	- Hello Timer: 30 seconds
+	- Dead Timer: 120 seconds
+
+R2:
+- Router ID: 10.10.10.2
+- Networks
+	- 10.0.2.0/24
+	- 10.0.3.0/24
+	- 172.31.31.248/30
+	- 172.24.24.252/30
+- G0/2: match Hello timer + Dead timer w/ R1
+
+R3:
+- Router ID: 10.10.10.3
+- Networks
+	- 10.0.12.0/26
+	- 10.0.12.64/26
+	- 172.27.27.240/30
+
+MLS:
+- Router ID: 1.1.1.1
+- Networks
+	- 172.20.20.252/30
+	- 172.24.24.252/30
+	- 172.27.27.240/30
+	- 192.168.33.0/30
+
+Edge Router:
+- Router ID: 1.1.0.1
+- Networks
+	- 192.168.33.0/30
+- Share default static routes
+______________________________________________________________________________
+
+Part 7: Connect All of the Devices Outside of the Internal Network
+
+Edge Router:
+- connect port G0/0/0 with Primary Router's G0/2/0
+- connect port G0/1 with Backup Router's G0/0/0
+
+Primary Router:
+- connect port G0/3/0 with Diamond Bar Router's G0/3/0
+
+Backup Router:
+- connect port G0/0/1 with Diamond Bar Router's G0/0
+
+Diamond Bar Router:
+- connect port G0/1 with Roommate Switch's G0/1
+- connect port G0/2 with Boss Switch's G0/1
+
+Boss Switch:
+- connect port Fa0/1 with Boss PC
+
+Roommate Switch:
+- connect port Fa0/1 with Roommate 1
+- connect port Fa0/2 with Roommate 2
+______________________________________________________________________________
+
+Part 8: Assign IP Addressing for the Roommates and Boss
+
+Boss PC: 192.168.1.2/24
+
+Roommate 1: 219.52.10.31/24
+Roommate 2: 219.52.10.56/24
+______________________________________________________________________________
+
+Part 9: Assign Remaining IP Addressing and Hostnames for Routers and Switches 
+
+Edge Router:
+- G0/0/0: 48.1.2.2/29
+- G0/1: 148.2.111.34/27
+
+Primary Router:
+- Hostname: Primary_Router
+- G0/2/0: 48.1.2.1/29
+- G0/3/0: 48.1.2.9/29
+
+Backup Router:
+- Hostname: Backup_Router
+- G0/0/0: 148.2.111.33/27
+- G0/0/1: 200.89.5.1/30
+
+Diamond Bar Router:
+- Hostname: Diamond_Bar_Router
+- G0/0: 200.89.5.2/30
+- G0/1: 219.52.10.1/24
+- G0/2: 192.168.1.1/24
+- G0/3/0: 48.1.2.10/29
+
+Boss Switch:
+- Hostname: Boss_Switch
+
+Roommate Switch:
+- Hostname: Roommate_Switch
+______________________________________________________________________________
+
+Part 10: Configure Static Routes on the Outside Routers
+Note: Only specify the next hop IP address unless otherwise instructed to
+
+Edge Router:
+- Any packet destined for an unknown network (in the router's perspective) 
+should primarily go through Primary Router using an administrative 
+distance of 10
+- Configure a backup default route that goes through Backup Router using an
+administrative distance of 150
+
+Primary Router:
+- Packets going to the Roommate Network (219.52.10.0/24) should go through
+Diamond Bar Router
+- Packets going to the link between Backup Router and Diamond Bar Router
+(200.89.5.0/30) should also go through Diamond Bar Router
+- Any other packets should go through Edge Router
+
+Backup Router:
+- Packets going to the Roommate Network (219.52.10.0/24) should go through
+Diamond Bar Router
+- Packets going to the host 48.1.2.12 should go through Diamond Bar Router
+- Any packet destined for an unknown network should go through Edge Router
+specifying both the link and next hop IP address
+
+Diamond Bar Router:
+- Apply the same configurations as Edge Router
+______________________________________________________________________________
+
+Part 11: Configure Static NAT for the Internal Servers and Boss PC
+
+Boss PC: Inside global address of 48.1.2.12 (Remember that the inside and
+outside interfaces need to be configured too)
+
+Servers: Two public addresses each
+- Server 1: Inside global address of 48.1.2.3 and 148.2.111.41
+- Server 2: Inside global address of 48.1.2.4 and 148.2.111.42
+______________________________________________________________________________
+
+Part 12: Configure NAT for Internal Hosts
+Note: All configurations here will take within the Edge Router
+
+Numbered ACL 1
+- Permit traffic from the 10.0.0.0/24, 10.0.2.0/24, 10.0.12.0/26, and
+10.0.12.64/26 networks
+
+Numbered ACL 2
+- Permit traffic from the 10.0.12.0/26 and 10.0.12.64/26 networks
+
+NAT pool: OUTSIDE-ACCESS
+- Public IP address range: 148.2.111.36 - 148.2.111.40 with a /27 mask
+
+Apply ACL 1 to the OUTSIDE-ACCESS pool for NAT
+Use PAT (NAT Overload) for ACL 2 using the interface to the Primary Router
+______________________________________________________________________________
+
+Part 13: Configure ACLs for Security
+
+Edge Router:
+- Use ACL number 110 
+- Deny any traffic coming from the Roommates' IP using the `host` keyword
+- Allow all other traffic
+- Apply this ACL for any incoming traffic from ports facing the public network
+
+R3:
+- Use an extended ACL named WORKERS
+- Permit any icmp and tcp traffic coming from the 10.0.12.0/26 and 
+10.0.12.64/26 networks bound for the Boss PC's public IP address (48.1.2.12)
+- Permit any traffic coming from the 10.0.12.0/26 and 10.0.12.64/26 networks
+bound for the Servers using the 'host' keyword for the servers
+- If you would like to, you can explicitly deny all other traffic (not needed)
+- Apply this ACL for any incoming traffic from the Money Manager/Workers
+______________________________________________________________________________
+
+Part 14: Completed the Task
+
+If you've completed all of the steps above, good work! I highly suggest that
+you perform ping tests as I have attached a spreadsheet (access with PYLUSD)
+with a table of ping results from different IP addresses. If your results do
+not match, you likely configured something incorrectly or put in a typo within
+your ping command (like the wrong address). Also, check to see if you are able 
+to SSH into Access Switch 1 to verify that SSH was correctly configured.
