@@ -1,0 +1,11 @@
+Changing a bridge (switch) to become the root bridge in a VLAN
+(config)#spanning-tree vlan [vlan number] root [primary | secondary]
+Ex: spanning-tree vlan 10 root secondary
+    spanning-tree vlan 20 root primary
+
+Changing the priority of a bridge (switch) for STP calculation
+(config)#spanning-tree vlan [vlan number] priority [value in multiples of 4096]
+Ex: spanning-tree vlan 20 priority 20480
+
+Changing the STP version
+(config)#spanning-tree mode [pvst | rapid-pvst]
